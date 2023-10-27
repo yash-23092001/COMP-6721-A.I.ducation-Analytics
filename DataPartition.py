@@ -5,8 +5,8 @@ import random
 labels = ["bored", "confused", "distracted", "focused", "neutral"]
 
 def split(nameIn, source_dir):
-    train_dir = "./Student-engagement-dataset/train/" + nameIn
-    test_dir = "./Student-engagement-dataset/test/" + nameIn
+    train_dir = "partitioned-dataset/train/" + nameIn
+    test_dir = "partitioned-dataset/test/" + nameIn
 
     # Create destination directories if they don't exist
     os.makedirs(train_dir, exist_ok=True)
@@ -36,5 +36,5 @@ def split(nameIn, source_dir):
 
 for name in labels:
     # Define the source and destination directories
-    dirS = "./Dataset/" + name
+    dirS = "Dataset/" + name
     split(name, dirS)
