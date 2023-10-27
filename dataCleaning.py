@@ -42,6 +42,9 @@ for dir in dataset:
                 # change color from RBG to Grayscale
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+                # Apply minor cropping (10 pixels from each side)
+                image = image[10:target_height - 10, 10:target_width - 10]
+
                 # Save the standardized image to the output directory
                 output_path = os.path.join(output_dir, file_name)
                 cv2.imwrite(output_path, image)
