@@ -7,6 +7,8 @@ labels = ["bored", "confused", "focused", "distracted", "neutral"]
 train_img_counts = []
 test_img_counts = []
 
+os.mkdir("Docs")
+
 for name in labels:
     train_dir_path = "standardized-dataset/train/" + name
     test_dir_path = "standardized-dataset/test/" + name
@@ -29,7 +31,7 @@ plt.title('Bar Graph of number of images for each facial expressions')
 plt.legend()
 
 # save the bar graph
-plt.savefig("Docs/Distribution_Bar_Chart.jpg")
+plt.savefig("Docs/distribution_Bar_Chart.jpg")
 
 
 # Create a 5x5 grid of subplots
@@ -44,7 +46,7 @@ for i in range(5):
     file_list = os.listdir(img_dir)
     for j in range(5):
         # Load the images you want to display
-        img = os.path.join(img_dir, file_list[random.randint(0, 501)])
+        img = os.path.join(img_dir, file_list[random.randint(0, 100)])
         if not img is None:
             selected_rendom_images.append(img)
             image = cv2.imread(img)

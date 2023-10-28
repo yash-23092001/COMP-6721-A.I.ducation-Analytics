@@ -13,6 +13,7 @@ labels = ["bored", "confused", "distracted", "focused", "neutral"]
 target_width = 256
 target_height = 256
 
+
 for dir in dataset:
     for name in labels:
         # Define the directory where your images are located
@@ -25,6 +26,7 @@ for dir in dataset:
 
         # List the files in the input directory
         input_files = os.listdir(input_dir)
+        # print(len(input_files))
 
         # Loop through each image and perform standardization
         for file_name in input_files:
@@ -33,14 +35,15 @@ for dir in dataset:
             image = cv2.imread(image_path)
 
             if not image is None:
+                # print("ha male che")
+                # change color from RBG to Grayscale
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
                 # Resize the image to the target dimensions
                 image = cv2.resize(image, (target_width, target_height))
 
-                # Apply brightness adjustment
-                image = cv2.convertScaleAbs(image, alpha=1, beta=0)
-
-                # change color from RBG to Grayscale
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                # Apply brightness adjustment (changing the brightness by up to 30%)
+                image = cv2.convertScaleAbs(image, alpha=1.1, beta=0)
 
                 # Apply minor cropping (10 pixels from each side)
                 image = image[10:target_height - 10, 10:target_width - 10]
@@ -48,5 +51,6 @@ for dir in dataset:
                 # Save the standardized image to the output directory
                 output_path = os.path.join(output_dir, file_name)
                 cv2.imwrite(output_path, image)
+        
 
 print("Standardization complete.")
