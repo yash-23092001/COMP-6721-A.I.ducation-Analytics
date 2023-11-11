@@ -2,7 +2,7 @@ import os
 import shutil
 import random
 
-labels = ["bored", "confused", "distracted", "focused", "neutral"]
+labels = ["bored", "angry", "focused", "neutral"]
 
 def split(nameIn, source_dir):
     train_dir = "partitioned-dataset/train/" + nameIn
@@ -36,5 +36,5 @@ def split(nameIn, source_dir):
 
 for name in labels:
     # Define the source and destination directories
-    dirS = "Dataset/" + name
+    dirS = "cleaned-dataset/" + name
     split(name, dirS)
