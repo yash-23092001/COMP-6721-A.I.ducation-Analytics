@@ -1,27 +1,33 @@
 import os
 import random
 import matplotlib.pyplot as plt
+import numpy as np
 import cv2
 
 labels = ["bored", "angry", "focused", "neutral"]
 train_img_counts = []
 test_img_counts = []
+validation_img_counts = []
 
 for name in labels:
-    train_dir_path = "partitioned-dataset/train/" + name
-    test_dir_path = "partitioned-dataset/test/" + name
+    train_dir_path = "Dataset/train/" + name
+    test_dir_path = "Dataset/test/" + name
+    validation_dir_path = "Dataset/validation/" + name
 
     train_file_count = len([f for f in os.listdir(train_dir_path)])
     test_file_count = len([f for f in os.listdir(test_dir_path)])
+    validation_file_count = len([f for f in os.listdir(validation_dir_path)])
 
     train_img_counts.append(train_file_count)
     test_img_counts.append(test_file_count)
+    validation_img_counts.append(validation_file_count)
 
 os.mkdir("Docs")
 
 #  Create a stacked bar graph
-plt.bar(labels, train_img_counts, label='Training Images')
-plt.bar(labels, test_img_counts, label='Testing Images', bottom=train_img_counts)
+plt.bar(labels, train_img_counts, label=f'Training Images {train_img_counts}')
+plt.bar(labels, test_img_counts, label=f'Testing Images {test_img_counts}', bottom=train_img_counts)
+plt.bar(labels, validation_img_counts, label=f'Validation Images {validation_img_counts}', bottom=np.array(train_img_counts) + np.array(test_img_counts))
 plt.xlabel('Facial Expressions')
 plt.ylabel('Number of Images')
 plt.title('Bar Graph of number of images for each facial expressions')
@@ -41,7 +47,7 @@ selected_rendom_images = []
 
 # Load and display different images in each subplot
 for i in range(len(labels)):
-    img_dir = "partitioned-dataset/train/" + labels[i]
+    img_dir = "Dataset/train/" + labels[i]
     file_list = os.listdir(img_dir)
     for j in range(5):
         # Load the images you want to display
