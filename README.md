@@ -15,7 +15,7 @@ COMP 6721 AAI Project to create A.I.ducation Analytics using CNN
 
 3. First run dataCleaning.py, which will resize the images and convert them into grayscale.
 
-4. Then run dataPartition.py, which will partition the dataset into training and testing directories.
+4. Then run dataPartition.py, which will partition the dataset into training, testing and validation directories.
 
 5. Lastly run dataVisualization.py, which will create the distribution bar chart for all classes in dataset, 5X5 grid image which shows some example images of each class and also its pixel intensities. These all images will be saved inside Docs folder.
 
