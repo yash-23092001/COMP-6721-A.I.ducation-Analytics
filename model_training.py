@@ -2,32 +2,72 @@
 import numpy as np
 import pandas as pd
 import os
+import random
 
 import torch
 import torchvision
-import torchvision.transforms as transforms
+from torch.utils.data import Dataset
+from torchvision import transforms
+from PIL import Image
 import torch.nn as nn
 import torch.optim as optim
 from torchvision.io import read_image
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 import matplotlib.pyplot as plt
 
-os.makedirs("Confusion_Matrix")
-os.makedirs("models")
+# os.makedirs("Confusion_Matrix")
+# os.makedirs("models")
+root_dir = './cleaned-dataset'
 
-# dataset paths
-train_data = '/content/Dataset/train'
-validation_data = '/content/Dataset/validation'
-test_data = '/content/Dataset/test'
+classes = os.listdir(root_dir)
 
-# classes of the model
-classes = sorted(os.listdir(train_data))
-print(classes)
+file_paths = {c: [] for c in classes}
+
+for label in classes:
+    class_dir = os.path.join(root_dir, label)
+    file_names = os.listdir(class_dir)
+    file_paths[label] = [os.path.join(class_dir, file) for file in file_names]
+
+train_files, val_files, test_files = {}, {}, {}
+
+for label, paths in file_paths.items():
+    train_val_files, test_files[label] = train_test_split(
+        paths, test_size=0.15, random_state=42)
+    train_files[label], val_files[label] = train_test_split(
+        train_val_files, test_size=0.1765, random_state=42)  # 70% of 85% = ~60%
+
+train_set = [file for files in train_files.values() for file in files]
+val_set = [file for files in val_files.values() for file in files]
+test_set = [file for files in test_files.values() for file in files]
+
+print(f"Train set size: {len(train_set)}")
+print(f"Validation set size: {len(val_set)}")
+print(f"Test set size: {len(test_set)}")
 
 # function to load the dataset
 # that will randomly transform the images, to train model perfectly
+
+
+class CustomFacialImageDataset(Dataset):
+    def __init__(self, file_paths, transform=None):
+        self.file_paths = file_paths
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.file_paths)
+
+    def __getitem__(self, idx):
+        img_path = self.file_paths[idx]
+        image = Image.open(img_path).convert('RGB')
+        if self.transform:
+            image = self.transform(image)
+        label = img_path.split('/')[-2]
+        return image, label
+
+
 def load_dataset(train_data, validation_data, test_data):
     transformation = transforms.Compose([
         transforms.RandomHorizontalFlip(0.5),
@@ -37,36 +77,28 @@ def load_dataset(train_data, validation_data, test_data):
                              0.229, 0.224, 0.225])
     ])
 
-    dataset = torchvision.datasets.ImageFolder(
-        root=train_data,
-        transform=transformation
-    )
-
-    validating_dataset = torchvision.datasets.ImageFolder(
-        root=validation_data,
-        transform=transformation
-    )
-    testing_dataset = torchvision.datasets.ImageFolder(
-        root=test_data,
-        transform=transformation
-    )
+    train_dataset = CustomFacialImageDataset(
+        train_set, transform=transformation)
+    validation_dataset = CustomFacialImageDataset(
+        val_set, transform=transformation)
+    test_dataset = CustomFacialImageDataset(test_set, transform=transformation)
 
     train_loader = torch.utils.data.DataLoader(
-        dataset,
+        train_dataset,
         batch_size=32,
         num_workers=0,
         shuffle=True
     )
 
     validation_loader = torch.utils.data.DataLoader(
-        validating_dataset,
+        validation_dataset,
         batch_size=32,
         num_workers=0,
         shuffle=True
     )
 
     test_loader = torch.utils.data.DataLoader(
-        testing_dataset,
+        test_dataset,
         batch_size=32,
         num_workers=0,
         shuffle=True
@@ -76,7 +108,7 @@ def load_dataset(train_data, validation_data, test_data):
 
 
 train_loader, validation_loader, test_loader = load_dataset(
-    train_data, validation_data, test_data)
+    train_set, val_set, test_set)
 batch_size = train_loader.batch_size
 
 # main model of the CNN
@@ -123,6 +155,7 @@ class CNN(nn.Module):
 
 # variant1 of main model of the CNN
 
+
 class CNNVariant1(nn.Module):
     def __init__(self, num_classes):
         super(CNNVariant1, self).__init__()
@@ -167,6 +200,7 @@ class CNNVariant1(nn.Module):
         return x
 
 # variant2 of main model of the CNN
+
 
 class CNNVariant2(nn.Module):
     def __init__(self, num_classes):
@@ -219,6 +253,7 @@ modelv2 = CNNVariant2(num_classes=4).to(device)
 models = [["Main", model], ["Variant 1", modelv1], [
     "Variant 2", modelv2]]
 print(device)
+target_to_index = {"angry": 0, "bored": 1, "focused": 2, "neutral": 3}
 
 
 def train(model, device, train_loader, optimizer, epoch):
@@ -228,25 +263,25 @@ def train(model, device, train_loader, optimizer, epoch):
     correct = 0
     total = 0
 
-
-
     print("Epoch:", epoch)
     # Process the images in batches
-    for batch_idx, (data, target) in enumerate(train_loader):
+    for batch_idx, ((data), targets) in enumerate(train_loader):
         # Use the CPU or GPU as appropriate
         # Recall that GPU is optimized for the operations we are dealing with
-        data, target = data.to(device), target.to(device)
-
+        print(batch_idx)
+        data = data.to(device)
+        targets = torch.tensor([target_to_index.get(target, 0)
+                               for target in targets]).to(device)
         optimizer.zero_grad()
         output = model(data)
-        loss = loss_criteria(output, target)
+        loss = loss_criteria(output, targets)
         train_loss += loss.item()
         loss.backward()
         optimizer.step()
 
         _, predicted = output.max(1)
-        total += target.size(0)
-        correct += predicted.eq(target).sum().item()
+        total += targets.size(0)
+        correct += predicted.eq(targets).sum().item()
 
     avg_loss = train_loss / (batch_idx+1)
     train_loss += loss.item()
@@ -263,23 +298,22 @@ def validate(model, device, validation_loader):
     validation_loss = 0
     correct = 0
 
-
-
     with torch.no_grad():
         batch_count = 0
-        for data, target in validation_loader:
+        for data, targets in validation_loader:
             batch_count += 1
-            data, target = data.to(device), target.to(device)
+            data = data.to(device)
+            targets = torch.tensor([target_to_index[target]
+                                   for target in targets]).to(device)
 
             output = model(data)
 
-            validation_loss += loss_criteria(output, target).item()
+            validation_loss += loss_criteria(output, targets).item()
 
             _, predicted = torch.max(output.data, 1)
-            correct += torch.sum(target == predicted).item()
+            correct += torch.sum(targets == predicted).item()
 
     avg_loss = validation_loss / batch_count
-
 
     print('Validation set: Average loss: {:.6f}, Accuracy: {}/{} ({:.0f}%)'.format(
         avg_loss, correct, len(validation_loader.dataset),
@@ -297,19 +331,21 @@ def test(model, device, test_loader):
 
     with torch.no_grad():
         batch_count = 0
-        for data, target in test_loader:
+        for data, targets in test_loader:
             batch_count += 1
-            data, target = data.to(device), target.to(device)
+            data = data.to(device)
+            targets = torch.tensor([target_to_index[target]
+                                   for target in targets]).to(device)
 
             output = model(data)
 
-            test_loss += loss_criteria(output, target).item()
+            test_loss += loss_criteria(output, targets).item()
 
             _, predicted = torch.max(output.data, 1)
-            correct += torch.sum(target == predicted).item()
+            correct += torch.sum(targets == predicted).item()
 
             all_predictions.extend(predicted.cpu().numpy())
-            all_labels.extend(target.cpu().numpy())
+            all_labels.extend(targets.cpu().numpy())
 
     avg_loss = test_loss / batch_count
     print('Testing set: Average loss: {:.6f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
@@ -340,8 +376,6 @@ for m in models:
         loss = validate(m[1], device, validation_loader)
 
         test(m[1], device, test_loader)
-
-
 
         if loss < best_valid_loss:
             best_valid_loss = loss
@@ -397,6 +431,8 @@ print(f"Variant 1\t{variant1_precision:.4f}\t\t{variant1_recall:.4f}\t\t{variant
 print(f"Variant 2\t{variant2_precision:.4f}\t\t{variant2_recall:.4f}\t\t{variant2_f1:.4f}\t\t{variant2_micro_precision:.4f}\t\t{variant2_micro_recall:.4f}\t\t{variant2_micro_f1:.4f}\t\t{variant2_accuracy:.4f}")
 
 # function to plot confusion matrix
+
+
 def plot_confusion_matrix(true_label, predicted_label, model_name):
 
     true_label = np.array(true_label)
