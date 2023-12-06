@@ -24,6 +24,11 @@ After training it will save the model as with .pth extension.
 
 7. In model_testing.py, we'll load the saved model by providing its path and try it on different images by setting the path of any image or you can give entire directory to predict the class of each image.
 
+8. for validation k_fold_cross_validation.py file added, run the file to check accuracy for all k folds.
+
+9. for bias analysis bias_analysis.py file added, run the file on for male and female gender and for old and young age group. for both attributes we checked the old model to check for biases and creating table for precision, recall, F1 score and accuracy.
+
+
 # Contributors
 
 - Yash Chhelaiya
